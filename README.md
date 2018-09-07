@@ -102,34 +102,36 @@ Add the following to your `mix.exs`:
 
 ```elixir
 def deps do
-  [{:money, "~> 1.2.1"}]
+  [{:money, "~> 1.2.2"}]
 end
 ```
 then run [`mix deps.get`](http://elixir-lang.org/getting-started/mix-otp/introduction-to-mix).
 
 ## CONFIGURATION
 
-You can set a default currency and default formatting preferences as follows:
+You can set a default currency and global formatting preferences as follows:
 
 ```elixir
 config :money,
   default_currency: :EUR,
   separator: ".",
   delimeter: ",",
+  fractional_unit: true
   symbol: false,
   symbol_on_right: false,
   symbol_space: false
 ```
 
-Then you don’t have to specify the currency.
+Then you don’t have to specify the currency. Also other config options will apply by default to all conversions.
 
 ```elixir
 iex> amount = Money.new(1_234_50)
 %Money{amount: 123450, currency: :EUR}
-iex> to_string(amount)
+iex> Money.to_string(amount)
 "1.234,50"
 ```
 
+You can also pass formatting options to the `to_string` function.
 Here is another example of formatting money:
 
 ```elixir
@@ -137,6 +139,37 @@ iex> amount = Money.new(1_234_50)
 %Money{amount: 123450, currency: :EUR}
 iex> Money.to_string(amount, symbol: true, symbol_on_right: true, symbol_space: true)
 "1.234,50 €"
+```
+
+### Currency configuration
+Sometimes you will need to setup different formatting options for each currency. You can do so by creating different
+configuration for each currency you need to be applied on.
+If some options are not found for the currency, it will fallback then to global and default options.
+
+```elixir
+config :money, :EUR
+  separator: "_",
+  symbol: true,
+  symbol_on_right: true,
+  symbol_space: true
+```
+
+Then:
+
+```elixir
+iex> amount = Money.new(1_234_50)
+%Money{amount: 123450, currency: :EUR}
+iex> Money.to_string(amount)
+"1_234,50 €"
+```
+
+Of course, you can override this options on the `to_string` function when called:
+
+```elixir
+iex> amount = Money.new(1_234_50)
+%Money{amount: 123450, currency: :EUR}
+iex> Money.to_string(amount, symbol: true, symbol_on_right: false, symbol_space: false)
+"€1_234,50"
 ```
 
 ## LICENSE

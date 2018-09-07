@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+- Add Money.Config module for dealing with configuration tree (currency -> gloabal -> defaults)
+- Doc for how-to add currency specific config
+
 ## 1.2.1
 
 - Add Money.abs/1

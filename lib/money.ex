@@ -27,6 +27,17 @@ defmodule Money do
         symbol_on_right: false,  # position the symbol
         symbol_space: false      # add a space between symbol and number
         fractional_unit: false   # don’t display the remainder or the delimeter
+
+  ### Currency configuration
+  Sometimes you will need to setup different formatting options for each currency. You can do so by creating different
+  configuration for each currency you need to be applied on.
+  If some options are not found for the currency, it will fallback then to global and default options.
+
+      config :money, :EUR
+        separator: "_",
+        symbol: true,
+        symbol_on_right: true,
+        symbol_space: true
   """
 
   @type t :: %__MODULE__{
@@ -36,7 +47,7 @@ defmodule Money do
 
   defstruct amount: 0, currency: :USD
 
-  alias Money.Currency
+  alias Money.{Currency, Config}
 
   @spec new(integer) :: t
   @doc ~S"""
@@ -54,7 +65,7 @@ defmodule Money do
       %Money{amount: 123, currency: :USD}
   """
   def new(amount) do
-    currency = Application.get_env(:money, :default_currency)
+    currency = Config.get(:default_currency)
     if currency do
       new(amount, currency)
     else
@@ -100,7 +111,7 @@ defmodule Money do
   """
   def parse(value, currency \\ nil, opts \\ [])
   def parse(value, nil, opts) do
-    currency = Application.get_env(:money, :default_currency)
+    currency = Config.get(:default_currency)
     if currency do
       parse(value, currency, opts)
     else
@@ -109,7 +120,7 @@ defmodule Money do
   end
   def parse(str, currency, opts) when is_binary(str) do
     try do
-      {_separator, delimeter} = get_parse_options(opts)
+      {_separator, delimeter} = get_parse_options(currency, opts)
       value = str
       |> prepare_parse_string(delimeter)
       |> add_missing_leading_digit
@@ -453,12 +464,12 @@ defmodule Money do
   end
 
   defp get_display_options(m, opts) do
-    {separator, delimeter} = get_parse_options(opts)
+    {separator, delimeter} = get_parse_options(m.currency, opts)
 
-    default_symbol = Application.get_env(:money, :symbol, true)
-    default_symbol_on_right = Application.get_env(:money, :symbol_on_right, false)
-    default_symbol_space = Application.get_env(:money, :symbol_space, false)
-    default_fractional_unit = Application.get_env(:money, :fractional_unit, true)
+    default_symbol = Config.get(:symbol, m.currency)
+    default_symbol_on_right = Config.get(:symbol_on_right, m.currency)
+    default_symbol_space = Config.get(:symbol_space, m.currency)
+    default_fractional_unit = Config.get(:fractional_unit, m.currency)
 
     symbol = if Keyword.get(opts, :symbol, default_symbol), do: Currency.symbol(m), else: ""
     symbol_on_right = Keyword.get(opts, :symbol_on_right, default_symbol_on_right)
@@ -468,11 +479,13 @@ defmodule Money do
     {separator, delimeter, symbol, symbol_on_right, symbol_space, fractional_unit}
   end
 
-  defp get_parse_options(opts) do
-    default_separator = Application.get_env(:money, :separator, ",")
+  defp get_parse_options(currency, opts) do
+    default_separator = Config.get(:separator, currency)
+    default_delimeter = Config.get(:delimeter, currency)
+
     separator = Keyword.get(opts, :separator, default_separator)
-    default_delimeter = Application.get_env(:money, :delimeter, ".")
     delimeter = Keyword.get(opts, :delimeter, default_delimeter)
+
     {separator, delimeter}
   end
 
